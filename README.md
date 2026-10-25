@@ -12,7 +12,7 @@
 
 CO₂、乾冰等低溫設備附近的電控箱，在潮濕季節容易結露，箱內的 PLC、變頻器與繼電器受潮後可能故障停機。現場通常要等異常發生才發現。
 
-本專題用低成本感測器與物聯網，在**結露發生前**提出預警。
+本次實驗用低成本感測器與物聯網，在**結露發生前**提出預警。
 
 ## 系統架構
 
@@ -68,22 +68,11 @@ $$T_A - T_{d,A} < \Delta T_{margin}$$
 
 呼氣時差距約 4.0°C，未低於預設門檻 3°C。展示時將門檻調為 4.5°C（介於 4.0 與 5.3 之間），即可呼氣觸發、靜置不誤報；實際電控箱建議維持 2～3°C。
 
-## 硬體接線
+## 實驗流程
 
-| DHT11 | 感測器 A | 感測器 B |
-| --- | --- | --- |
-| VCC | 3.3V | 3.3V |
-| DATA | GPIO 4 | GPIO 17 |
-| GND | GND | GND |
-
-- 以 3.3V 供電，避免 DATA 被上拉到 5V 損傷 ESP32 GPIO。
-- 裸感測器需在 DATA 與 VCC 之間加 10kΩ 上拉電阻；模組版已內建。
-
-## 快速開始
-
-1. Arduino IDE 2 安裝 **esp32 by Espressif Systems**，開發板選 **ESP32S3 Dev Module**，`USB CDC On Boot` 設為 **Enabled**（使用原生 USB 孔時）。
-2. 函式庫管理員安裝 **PubSubClient**（Nick O'Leary）與 **DHT sensor library**（Adafruit）。
-3. ThingSpeak 建立 Channel（8 個欄位，名稱用英文：`A_Temp`、`A_Humidity`、`B_Temp`、`B_Humidity`、`A_DewPoint`、`A_AbsHumidity`、`DeltaT`、`Status`），再到 **Devices → MQTT** 新增裝置並授權該 Channel 的 Publish。
+1. Arduino IDE 2 安裝 esp32 by Espressif Systems，開發板選 ESP32S3 Dev Module，`USB CDC On Boot` 設為 Enabled（使用原生 USB 孔時）。
+2. 函式庫管理員安裝 PubSubClient（Nick O'Leary）與 DHT sensor library（Adafruit）。
+3. ThingSpeak 建立 Channel（8 個欄位，名稱用英文：`A_Temp`、`A_Humidity`、`B_Temp`、`B_Humidity`、`A_DewPoint`、`A_AbsHumidity`、`DeltaT`、`Status`），再到 Devices → MQTT 新增裝置並授權該 Channel 的 Publish。
 4. 複製 `dew_point_monitor/secrets.example.h` 為 `secrets.h`，填入 Wi-Fi 與 MQTT 帳密。
 5. 上傳程式，序列埠監控視窗設 115200 baud。
 6. 在 ThingSpeak 新增 MATLAB Visualization，貼上 `matlab/temp_vs_dewpoint.m`。
@@ -102,19 +91,9 @@ dew-point-monitor/
     └── breath_test_chart.png
 ```
 
-## 開發問題與解決
-
-| 問題 | 原因 | 解決 |
-| --- | --- | --- |
-| 序列埠只顯示 `ESP-ROM`，沒有程式輸出 | ESP32-S3 的 `USB CDC On Boot` 未啟用，輸出走 UART0 腳位 | 啟用 CDC，並在 `setup()` 加延遲等 USB 連線 |
-| 上傳失敗：無法開啟 COM 埠 | 監控視窗佔用埠號；原生 USB 重置後埠號改變 | 關閉監控視窗、重選埠號，必要時用 BOOT + RST 進下載模式 |
-| MATLAB：`Duplicate table variable name` | 中文欄位名稱轉成變數時被刪除，造成重名 | 欄位名稱改為英文 |
-| 圖表時間差 8 小時 | `thingSpeakRead` 回傳 UTC 時間 | 時間加 8 小時 |
-
-## 限制與未來展望
+## 未來展望
 
 - DHT11 精度約 ±2°C / ±5%RH，範圍 0～50°C；可升級 SHT31 / SHT40，低溫段改用 PT100。
-- 加入 **RS485 Modbus RTU**，讓 PLC / HMI 直接讀取。
-- 以繼電器連動箱內**加熱器或風扇**主動除濕。
-- 預警推播至 **LINE Messaging API**。
-- 累積長期資料，以趨勢分析或機器學習**預測結露發生時間**。
+- 以繼電器連動箱內加熱器或風扇主動除濕。
+- 預警推播至 LINE Messaging API。
+- 累積長期資料，以趨勢分析或機器學習，預測結露發生時間。
